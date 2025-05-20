@@ -1,0 +1,9 @@
+# requirements.txt
+streamlit
+torch
+transformers
+peft
+bitsandbytes
+rouge-score
+nltk
+huggingface-hub
