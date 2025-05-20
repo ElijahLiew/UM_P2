@@ -20,7 +20,7 @@ nltk.download("punkt")
 # --- Sidebar / Secrets config ---
 st.sidebar.markdown("## Model settings")
 HUGGINGFACE_TOKEN = st.sidebar.text_input(
-    "HF Token", type="password", help="Set your HuggingFace token", value="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"
+    "HF Token", type="password", help="Set your HuggingFace token"
 )
 BASE_MODEL = st.sidebar.text_input(
     "Base model repo", value="speedlegal/SL-Llama-3.2-1b"
