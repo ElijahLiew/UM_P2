@@ -23,7 +23,7 @@ HUGGINGFACE_TOKEN = st.sidebar.text_input(
     "HF Token", type="password", help="Set your HuggingFace token"
 )
 BASE_MODEL = st.sidebar.text_input(
-    "Base model repo", value="meta-llama/Llama-3.2-1B"
+    "Base model repo", value="speedlegal/SL-Llama-3.2-1b"
 )
 PEFT_MODEL = st.sidebar.text_input(
     "PEFT/LORA repo", value="your-username/your-peft-model"
@@ -51,9 +51,9 @@ def load_model(base, peft, hf_token, device="cuda" if torch.cuda.is_available() 
         torch_dtype=torch.float16 if device=="cuda" else torch.float32,
         trust_remote_code=True
     )
-    model = PeftModel.from_pretrained(
-        model, peft, device_map="auto" if device=="cuda" else None
-    )
+    #model = PeftModel.from_pretrained(
+    #    model, peft, device_map="auto" if device=="cuda" else None
+    #)
     tokenizer = AutoTokenizer.from_pretrained(
         base, padding_side="left", trust_remote_code=True
     )
