@@ -20,14 +20,14 @@ nltk.download("punkt")
 # --- Sidebar / Secrets config ---
 st.sidebar.markdown("## Model settings")
 HUGGINGFACE_TOKEN = st.sidebar.text_input(
-    "HF Token", type="password", help="Set your HuggingFace token"
+    "HF Token", type="password", help="Set your HuggingFace token", value="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"
 )
 BASE_MODEL = st.sidebar.text_input(
     "Base model repo", value="speedlegal/SL-Llama-3.2-1b"
 )
-PEFT_MODEL = st.sidebar.text_input(
-    "PEFT/LORA repo", value="your-username/your-peft-model"
-)
+#PEFT_MODEL = st.sidebar.text_input(
+#    "PEFT/LORA repo", value="your-username/your-peft-model"
+#)
 
 # --- Cached model loader ---
 @st.cache_resource
