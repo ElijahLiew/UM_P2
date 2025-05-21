@@ -7,3 +7,4 @@ bitsandbytes
 rouge-score
 nltk
 huggingface-hub
+unsloth
