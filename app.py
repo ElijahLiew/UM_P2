@@ -23,15 +23,12 @@ HUGGINGFACE_TOKEN = st.sidebar.text_input(
     "HF Token", type="password", help="Set your HuggingFace token"
 )
 BASE_MODEL = st.sidebar.text_input(
-    "Base model repo", value="speedlegal/SL-Llama-3.2-1b"
+    "Base model repo", value="ElijahLiew2/um_p2_fine_tuned_llama"
 )
-#PEFT_MODEL = st.sidebar.text_input(
-#    "PEFT/LORA repo", value="your-username/your-peft-model"
-#)
 
 # --- Cached model loader ---
 @st.cache_resource
-def load_model(base, peft, hf_token, device="cuda" if torch.cuda.is_available() else "cpu"):
+def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "cpu"):
     if not hf_token:
         st.error("Provide a HuggingFace token in the sidebar!")
         st.stop()
@@ -51,12 +48,11 @@ def load_model(base, peft, hf_token, device="cuda" if torch.cuda.is_available() 
         torch_dtype=torch.float16 if device=="cuda" else torch.float32,
         trust_remote_code=True
     )
-    #model = PeftModel.from_pretrained(
-    #    model, peft, device_map="auto" if device=="cuda" else None
-    #)
+
     tokenizer = AutoTokenizer.from_pretrained(
         base, padding_side="left", trust_remote_code=True
     )
+    
     tokenizer.pad_token = tokenizer.eos_token
 
     gen_cfg = GenerationConfig(
@@ -64,7 +60,7 @@ def load_model(base, peft, hf_token, device="cuda" if torch.cuda.is_available() 
         top_p=0.75,
         top_k=40,
         num_beams=4,
-        max_new_tokens=512,
+        max_new_tokens=2048,
         repetition_penalty=1.2
     )
 
@@ -107,25 +103,39 @@ if submit:
         # read context
         context = uploaded.read().decode("utf-8", errors="ignore")
         # load model
-        cfg = load_model(BASE_MODEL, PEFT_MODEL, HUGGINGFACE_TOKEN)
+        cfg = load_model(BASE_MODEL, HUGGINGFACE_TOKEN)
         model, tok = cfg["model"], cfg["tokenizer"]
         gen_cfg, rouge_scorer_obj = cfg["gen_cfg"], cfg["rouge"]
         smooth_fn, dev = cfg["smooth"], cfg["device"]
 
-        # build prompt
-        prompt = (
-            f"<s>[INST] Given the following context, "
-            f"answer the question: {question}\n\n"
-            f"Context:\n{context} [/INST]\n\n###Response:"
-        )
-        inputs = tok(prompt, return_tensors="pt", truncation=True, max_length=1024)
-        inputs = {k:v.to(dev) for k,v in inputs.items()}
+        # build full_prompt        
+        only_prompt = """Below is a question about a contract excerpt. \
+                    Write a concise answer that satisfies the question.
 
-        with st.spinner("Running inference…"):
-            out = model.generate(**inputs, generation_config=gen_cfg)
-            raw = tok.decode(out[0], skip_special_tokens=True)
-            # extract
-            answer = raw.split("###Response:")[-1].strip()
+                    ### Question:
+                    {question}
+
+                    ### Contract Excerpt:
+                    {context}
+
+                    ### Answer:
+                    {answer}"""
+                    
+        full_prompt = only_prompt.format(
+                              question=question, # instruction
+                              context=context, # input
+                              answer="", # output - leave this blank for generation!
+                          )
+
+        inputs = tokenizer(
+            [
+                full_prompt
+            ], return_tensors = "pt").to("cuda")
+
+        with st.spinner("Running inference…"):           
+            outputs = model.generate(**inputs, max_new_tokens = 2048, use_cache = True)
+            answer = tokenizer.batch_decode(outputs)[-1].rsplit("Answer:", 1)[-1].strip()
+
 
         # compute metrics (using context as 'reference')
         rouge_scores = rouge_scorer_obj.score(context, answer)
