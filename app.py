@@ -39,13 +39,17 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
     login(token=hf_token)
 
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name      = model_path,        # can be local path or HF repo
-        max_seq_length  = max_seq_length,
-        dtype           = dtype,
-        load_in_4bit    = load_in_4bit,
+    # login, quant_cfg logic...
+    model = AutoModelForCausalLM.from_pretrained(
+        base,
+        device_map="auto" if device=="cuda" else None,
+        torch_dtype=torch.float16 if device=="cuda" else torch.float32,
+        trust_remote_code=True,
+        quantization_config=quant_cfg if device=="cuda" else None,
     )
-    FastLanguageModel.for_inference(model)        # ⚡ enables Unsloth-fast Kernels
+    model = PeftModel.from_pretrained(model, adapter_path)
+    tokenizer = AutoTokenizer.from_pretrained(base, padding_side="left", trust_remote_code=True)
+    tokenizer.pad_token = tokenizer.eos_token
 
     gen_cfg = GenerationConfig(
         temperature=0.1,
