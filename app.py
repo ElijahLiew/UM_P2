@@ -13,6 +13,10 @@ from transformers import (
 )
 from peft import PeftModel
 from huggingface_hub import login
+from unsloth import FastLanguageModel
+import torch, os
+
+
 
 # --- Download NLTK data once ---
 nltk.download("punkt")
