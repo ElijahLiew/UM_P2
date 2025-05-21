@@ -3,7 +3,6 @@ torch
 streamlit
 transformers
 peft
-bitsandbytes
 rouge-score
 nltk
 huggingface-hub

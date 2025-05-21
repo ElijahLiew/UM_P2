@@ -8,7 +8,6 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
-    BitsAndBytesConfig,
     GenerationConfig
 )
 from peft import PeftModel
