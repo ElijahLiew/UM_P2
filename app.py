@@ -37,16 +37,26 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
     login(token=hf_token)
 
 
-    # login, quant_cfg logic...
-    model = AutoModelForCausalLM.from_pretrained(
-        base,
-        device_map="auto" if device=="cuda" else None,
-        torch_dtype=torch.float16 if device=="cuda" else torch.float32,
-        trust_remote_code=True,
-    )
-    model = PeftModel.from_pretrained(model, base)
+    # 1️⃣ Load & clean the config
+    config = AutoConfig.from_pretrained(base, trust_remote_code=True)
+    if hasattr(config, "quantization_config"):
+        config.quantization_config = None  # strip out the BnB settings
+
+    # 2️⃣ Build your kwargs (no quantization_config here)
+    hf_kwargs = {
+        "config": config,
+        "device_map": "auto" if device=="cuda" else None,
+        "torch_dtype": torch.float16 if device=="cuda" else torch.float32,
+        "trust_remote_code": True,
+    }
+
+    # 3️⃣ Load the model with the cleaned config
+    model = AutoModelForCausalLM.from_pretrained(base, **hf_kwargs)
+
+    # 4️⃣ Continue as before
     tokenizer = AutoTokenizer.from_pretrained(base, padding_side="left", trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
+    
 
     gen_cfg = GenerationConfig(
         temperature=0.1,
