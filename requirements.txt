@@ -1,6 +1,6 @@
 # requirements.txt
-streamlit
 torch
+streamlit
 transformers
 peft
 bitsandbytes
