@@ -44,7 +44,6 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
         device_map="auto" if device=="cuda" else None,
         torch_dtype=torch.float16 if device=="cuda" else torch.float32,
         trust_remote_code=True,
-        quantization_config=quant_cfg if device=="cuda" else None,
     )
     model = PeftModel.from_pretrained(model, base)
     tokenizer = AutoTokenizer.from_pretrained(base, padding_side="left", trust_remote_code=True)

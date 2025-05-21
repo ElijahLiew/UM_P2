@@ -1,9 +1,20 @@
-# requirements.txt
-torch
+# 1. Upgrade pip first to avoid PEP517 builder quirks
+pip>=25.1.1
+
+# 2. Install CPU‑only PyTorch & friends immediately
+--find-links https://download.pytorch.org/whl/cpu/torch_stable.html
+torch==2.1.0+cpu
+torchvision==0.15.0+cpu
+torchaudio==2.0.1+cpu
+
+# 3. Then your other runtime deps
 streamlit
-transformers
+transformers>=4.35.0
 peft
 bitsandbytes
 rouge-score
 nltk
 huggingface-hub
+
+# 4. (Optional) GPU‑only packages—omit on CPU‑only deploys
+# unsloth
