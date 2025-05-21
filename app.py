@@ -33,27 +33,15 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
         st.error("Provide a HuggingFace token in the sidebar!")
         st.stop()
     login(token=hf_token)
-    # quant config
-    quant_cfg = BitsAndBytesConfig(
-        load_in_8bit=True,
-        llm_int8_threshold=6.0,
-        llm_int8_has_fp16_weight=False
-    ) if device=="cuda" else None
 
-    # base + PEFT
-    model = AutoModelForCausalLM.from_pretrained(
-        base,
-        quantization_config=quant_cfg,
-        device_map="auto" if device=="cuda" else None,
-        torch_dtype=torch.float16 if device=="cuda" else torch.float32,
-        trust_remote_code=True
-    )
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        base, padding_side="left", trust_remote_code=True
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name      = model_path,        # can be local path or HF repo
+        max_seq_length  = max_seq_length,
+        dtype           = dtype,
+        load_in_4bit    = load_in_4bit,
     )
-    
-    tokenizer.pad_token = tokenizer.eos_token
+    FastLanguageModel.for_inference(model)        # ⚡ enables Unsloth-fast Kernels
 
     gen_cfg = GenerationConfig(
         temperature=0.1,
