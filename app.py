@@ -1,232 +1,77 @@
 # app.py
 import streamlit as st
-import os
-import nltk
 import torch
-from rouge_score import rouge_scorer
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-from transformers import (
-    AutoConfig,
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    GenerationConfig
-)
-from peft import PeftModel
-from huggingface_hub import login
-import torch, os
 import logging
+from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
+from huggingface_hub import login
 
-
-# --- Download NLTK data once ---
-nltk.download("punkt")
-
-# --- Sidebar / Secrets config ---
-st.sidebar.markdown("## Model settings")
-HUGGINGFACE_TOKEN = st.sidebar.text_input(
-    "HF Token", type="password", help="Set your HuggingFace token"
-)
-BASE_MODEL = st.sidebar.text_input(
-    "Base model repo", value="ElijahLiew2/um_p2_fine_tuned_llama"
-)
-
-
-
-# Configure root logger once (usually in your main module)
+# ── 1) Logging ──────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
 )
-
 logger = logging.getLogger(__name__)
 
+# ── 2) Load HF_TOKEN from Secrets (static across reruns) ────────────────────
+# In your Streamlit Cloud repo settings, add under "Secrets":
+#   [secrets]
+#   HF_TOKEN = "your_huggingface_pat_here"
+HF_TOKEN = st.secrets.get("HF_TOKEN")
+if not HF_TOKEN:
+    st.sidebar.error("🚨 Please add your Hugging Face token to Streamlit Secrets as HF_TOKEN")
+    st.stop()
 
-
-# --- Cached model loader ---
-@st.cache_resource
-def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "cpu"):
-    if not hf_token:
-        st.error("Provide a HuggingFace token in the sidebar!")
-        st.stop()
-        
-    logger.info("Step A1")
+# ── 3) Cache the heavy model+tokenizer load once per worker ──────────────────
+@st.cache_resource(show_spinner=False)
+def get_llm(base_model: str, hf_token: str, device: str):
+    logger.info("🔐 Logging in to Hugging Face")
     login(token=hf_token)
 
-    logger.info("Step A2")
-    # 1️⃣ Load & clean the config
-    config = AutoConfig.from_pretrained(base, trust_remote_code=True)
-    
-    
-    if hasattr(config, "quantization_config"):
-        logger.info("Step A3")
-        config.quantization_config = None  # strip out the BnB settings
-
-    logger.info("Step A4")
-
-    # 2️⃣ Build your kwargs (no quantization_config here)
-    hf_kwargs = {
-        "config": config,
-        "device_map": "auto" if device=="cuda" else None,
-        "torch_dtype": torch.float16 if device=="cuda" else torch.float32,
-        "trust_remote_code": True,
-    }
-    
-    logger.info("Step A5")
-
-    # 3️⃣ Load the model with the cleaned config
-    model = AutoModelForCausalLM.from_pretrained(base, **hf_kwargs)
-    
-    logger.info("Step A6")
-
-    # 4️⃣ Continue as before
-    tokenizer = AutoTokenizer.from_pretrained(base, padding_side="left", trust_remote_code=True)
+    logger.info(f"⏬ Downloading {base_model}")
+    config = AutoConfig.from_pretrained(base_model, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model,
+        config=config,
+        device_map="auto" if device == "cuda" else None,
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        trust_remote_code=True,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model, padding_side="left", trust_remote_code=True
+    )
     tokenizer.pad_token = tokenizer.eos_token
-    
-    logger.info("Step A7")
 
-    gen_cfg = GenerationConfig(
-        temperature=0.1,
-        top_p=0.75,
-        top_k=40,
-        num_beams=4,
-        max_new_tokens=2048,
-        repetition_penalty=1.2
-    )
-    
-    logger.info("Step A8")
+    logger.info("✅ Model & tokenizer ready")
+    return model, tokenizer
 
-    rouge = rouge_scorer.RougeScorer(
-        ["rouge1","rouge2","rougeL"], use_stemmer=True
-    )
-    
-    logger.info("Step A9")
-    
-    smooth = SmoothingFunction().method1
+# ── 4) Pick your model & device ─────────────────────────────────────────────
+BASE_MODEL = st.sidebar.text_input("HuggingFace model repo", "ElijahLiew2/um_p2_fine_tuned_llama")
+device     = "cuda" if torch.cuda.is_available() else "cpu"
 
-    return {
-        "model": model,
-        "tokenizer": tokenizer,
-        "gen_cfg": gen_cfg,
-        "rouge": rouge,
-        "smooth": smooth,
-        "device": device
-    }
+# ── 5) This call only happens once! ─────────────────────────────────────────
+model, tokenizer = get_llm(BASE_MODEL, HF_TOKEN, device)
 
-# --- UI ---
+# ── 6) The rest of your UI can safely re-run forever ────────────────────────
 st.title("📄→🤖 QA + ROUGE/BLEU Demo")
 
-# Form to group submit/reset
-with st.form("qa_form"):
-    uploaded = st.file_uploader("1) Upload .txt context", type=["txt"], key="context_file")
-    question = st.text_area("2) Type your question here", key="question")
-    submit = st.form_submit_button("Submit")
-    reset  = st.form_submit_button("Reset")
-
-# Reset logic
-if reset:
-    for k in ["context_file","question","answer","rouge_scores","bleu_score"]:
-        if k in st.session_state:
-            del st.session_state[k]
-    st.experimental_rerun()
-
-# On submit
-if submit:
+uploaded = st.file_uploader("Upload .txt context", type="txt")
+question = st.text_area("Enter your question")
+if st.button("Submit"):
     if not uploaded or not question.strip():
-        st.error("Please upload a .txt file **and** enter a question.")
+        st.error("Please upload a file and type a question.")
     else:
-        logger.info("Step 1") 
-    
-        # read context
-        context = uploaded.read().decode("utf-8", errors="ignore")
-        
-        logger.info("Step 2")
-        
-        # load model
-        cfg = load_model(BASE_MODEL, HUGGINGFACE_TOKEN)
-
-        logger.info("Step 3")
-        
-        model, tok = cfg["model"], cfg["tokenizer"]
-
-        logger.info("Step 4") 
-
-        gen_cfg, rouge_scorer_obj = cfg["gen_cfg"], cfg["rouge"]
-        
-        logger.info("Step 5") 
-        
-        smooth_fn, dev = cfg["smooth"], cfg["device"]
-
-        # build full_prompt        
-        only_prompt = """Below is a question about a contract excerpt. \
-                    Write a concise answer that satisfies the question.
-
-                    ### Question:
-                    {question}
-
-                    ### Contract Excerpt:
-                    {context}
-
-                    ### Answer:
-                    {answer}"""
-                    
-        logger.info("Step 6") 
-                    
-        full_prompt = only_prompt.format(
-                              question=question, # instruction
-                              context=context, # input
-                              answer="", # output - leave this blank for generation!
-                          )
-                          
-        logger.info("Step 7") 
-
-        inputs = tokenizer(
-            [
-                full_prompt
-            ], return_tensors = "pt").to("cuda")
-
-        with st.spinner("Running inference…"):  
-            logger.info("Step 8") 
-        
-            outputs = model.generate(**inputs, max_new_tokens = 2048, use_cache = True)
-            
-            logger.info("Step 9") 
-            
-            answer = tokenizer.batch_decode(outputs)[-1].rsplit("Answer:", 1)[-1].strip()
-
-
-        # compute metrics (using context as 'reference')
-        logger.info("Step 10") 
-        
-        rouge_scores = rouge_scorer_obj.score(context, answer)
-        
-        logger.info("Step 11") 
-        
-        ref_tokens = nltk.word_tokenize(context.lower())
-        
-        logger.info("Step 12") 
-        
-        cand_tokens = nltk.word_tokenize(answer.lower())
-        
-        logger.info("Step 13") 
-        
-        bleu = sentence_bleu([ref_tokens], cand_tokens, smoothing_function=smooth_fn)
-
-        logger.info("Step 14") 
-
-        # cache into session so re-runs keep it
-        st.session_state["answer"] = answer
-        st.session_state["rouge_scores"] = rouge_scores
-        st.session_state["bleu_score"] = bleu
-
-# Display results if present
-if "answer" in st.session_state:
-    st.subheader("3) Model answer")
-    st.write(st.session_state["answer"])
-
-    st.subheader("4) Evaluation")
-    r = st.session_state["rouge_scores"]
-    st.write(f"- ROUGE-1   P={r['rouge1'].precision:.4f}  R={r['rouge1'].recall:.4f}  F1={r['rouge1'].fmeasure:.4f}")
-    st.write(f"- ROUGE-2   F1={r['rouge2'].fmeasure:.4f}")
-    st.write(f"- ROUGE-L   F1={r['rougeL'].fmeasure:.4f}")
-    st.write(f"- BLEU {st.session_state['bleu_score']:.4f}")
-
-    st.info("Click **Reset** above to start over.")
+        context = uploaded.read().decode("utf-8", "ignore")
+        prompt = f"""
+        Below is a question and context for you to answer.
+        ### Question:
+        {question}
+        ### Context:
+        {context}
+        ### Answer:
+        """
+        inputs = tokenizer(prompt, return_tensors="pt").to(device)
+        with st.spinner("Generating…"):
+            out = model.generate(**inputs, max_new_tokens=512)
+        answer = tokenizer.decode(out[0], skip_special_tokens=True).split("Answer:")[-1].strip()
+        st.subheader("Answer")
+        st.write(answer)
