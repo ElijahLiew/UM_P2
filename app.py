@@ -31,7 +31,10 @@ def get_llm(base_model: str, hf_token: str, device: str):
     login(token=hf_token)
 
     logger.info(f"⏬ Downloading {base_model}")
+    
     config = AutoConfig.from_pretrained(base_model, trust_remote_code=True)
+    logger.info(f"⏬ Downloaded config: {config}")
+    
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
         config=config,
@@ -39,10 +42,15 @@ def get_llm(base_model: str, hf_token: str, device: str):
         torch_dtype=torch.float16 if device == "cuda" else torch.float32,
         trust_remote_code=True,
     )
+    
+    logger.info(f"⏬ Downloaded model: {model}")
+    
     tokenizer = AutoTokenizer.from_pretrained(
         base_model, padding_side="left", trust_remote_code=True
     )
     tokenizer.pad_token = tokenizer.eos_token
+
+    logger.info(f"⏬ Downloaded tokenizer: {tokenizer}")
 
     logger.info("✅ Model & tokenizer ready")
     return model, tokenizer
