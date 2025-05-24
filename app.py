@@ -47,13 +47,20 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
     if not hf_token:
         st.error("Provide a HuggingFace token in the sidebar!")
         st.stop()
+        
+    logger.info("Step A1")
     login(token=hf_token)
 
-
+    logger.info("Step A2")
     # 1️⃣ Load & clean the config
     config = AutoConfig.from_pretrained(base, trust_remote_code=True)
+    
+    
     if hasattr(config, "quantization_config"):
+        logger.info("Step A3")
         config.quantization_config = None  # strip out the BnB settings
+
+    logger.info("Step A4")
 
     # 2️⃣ Build your kwargs (no quantization_config here)
     hf_kwargs = {
@@ -62,14 +69,19 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
         "torch_dtype": torch.float16 if device=="cuda" else torch.float32,
         "trust_remote_code": True,
     }
+    
+    logger.info("Step A5")
 
     # 3️⃣ Load the model with the cleaned config
     model = AutoModelForCausalLM.from_pretrained(base, **hf_kwargs)
+    
+    logger.info("Step A6")
 
     # 4️⃣ Continue as before
     tokenizer = AutoTokenizer.from_pretrained(base, padding_side="left", trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     
+    logger.info("Step A7")
 
     gen_cfg = GenerationConfig(
         temperature=0.1,
@@ -79,10 +91,15 @@ def load_model(base, hf_token, device="cuda" if torch.cuda.is_available() else "
         max_new_tokens=2048,
         repetition_penalty=1.2
     )
+    
+    logger.info("Step A8")
 
     rouge = rouge_scorer.RougeScorer(
         ["rouge1","rouge2","rougeL"], use_stemmer=True
     )
+    
+    logger.info("Step A9")
+    
     smooth = SmoothingFunction().method1
 
     return {
