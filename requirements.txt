@@ -6,3 +6,4 @@ peft
 rouge-score
 nltk
 huggingface-hub
+logging

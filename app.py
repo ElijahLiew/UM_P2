@@ -14,7 +14,7 @@ from transformers import (
 from peft import PeftModel
 from huggingface_hub import login
 import torch, os
-
+import logging
 
 
 # --- Download NLTK data once ---
@@ -28,6 +28,18 @@ HUGGINGFACE_TOKEN = st.sidebar.text_input(
 BASE_MODEL = st.sidebar.text_input(
     "Base model repo", value="ElijahLiew2/um_p2_fine_tuned_llama"
 )
+
+
+
+# Configure root logger once (usually in your main module)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
+
 
 # --- Cached model loader ---
 @st.cache_resource
@@ -104,12 +116,26 @@ if submit:
     if not uploaded or not question.strip():
         st.error("Please upload a .txt file **and** enter a question.")
     else:
+        logger.info("Step 1") 
+    
         # read context
         context = uploaded.read().decode("utf-8", errors="ignore")
+        
+        logger.info("Step 2")
+        
         # load model
         cfg = load_model(BASE_MODEL, HUGGINGFACE_TOKEN)
+
+        logger.info("Step 3")
+        
         model, tok = cfg["model"], cfg["tokenizer"]
+
+        logger.info("Step 4") 
+
         gen_cfg, rouge_scorer_obj = cfg["gen_cfg"], cfg["rouge"]
+        
+        logger.info("Step 5") 
+        
         smooth_fn, dev = cfg["smooth"], cfg["device"]
 
         # build full_prompt        
@@ -125,27 +151,49 @@ if submit:
                     ### Answer:
                     {answer}"""
                     
+        logger.info("Step 6") 
+                    
         full_prompt = only_prompt.format(
                               question=question, # instruction
                               context=context, # input
                               answer="", # output - leave this blank for generation!
                           )
+                          
+        logger.info("Step 7") 
 
         inputs = tokenizer(
             [
                 full_prompt
             ], return_tensors = "pt").to("cuda")
 
-        with st.spinner("Running inference…"):           
+        with st.spinner("Running inference…"):  
+            logger.info("Step 8") 
+        
             outputs = model.generate(**inputs, max_new_tokens = 2048, use_cache = True)
+            
+            logger.info("Step 9") 
+            
             answer = tokenizer.batch_decode(outputs)[-1].rsplit("Answer:", 1)[-1].strip()
 
 
         # compute metrics (using context as 'reference')
+        logger.info("Step 10") 
+        
         rouge_scores = rouge_scorer_obj.score(context, answer)
+        
+        logger.info("Step 11") 
+        
         ref_tokens = nltk.word_tokenize(context.lower())
+        
+        logger.info("Step 12") 
+        
         cand_tokens = nltk.word_tokenize(answer.lower())
+        
+        logger.info("Step 13") 
+        
         bleu = sentence_bleu([ref_tokens], cand_tokens, smoothing_function=smooth_fn)
+
+        logger.info("Step 14") 
 
         # cache into session so re-runs keep it
         st.session_state["answer"] = answer
