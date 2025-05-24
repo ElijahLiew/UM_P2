@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 # In your Streamlit Cloud repo settings, add under "Secrets":
 #   [secrets]
 #   HF_TOKEN = "your_huggingface_pat_here"
-HF_TOKEN = st.secrets.get("HF_TOKEN")
+#HF_TOKEN = st.secrets.get("HF_TOKEN")
+
+HF_TOKEN = "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"
+
 if not HF_TOKEN:
     st.sidebar.error("🚨 Please add your Hugging Face token to Streamlit Secrets as HF_TOKEN")
     st.stop()
