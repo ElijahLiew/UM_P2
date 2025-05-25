@@ -7,3 +7,5 @@ rouge-score
 nltk
 huggingface-hub
 logging
+google-cloud-aiplatform
+google-auth
