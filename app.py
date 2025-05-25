@@ -164,11 +164,14 @@ def call_vertex_llm(
     
     # Each prediction is usually a dict with a 'content' or 'generated_text' key
     pred = response.predictions[0]
-    return (
-        pred.get("content")
-        or pred.get("generated_text")
-        or str(pred)  # fallback
-    )
+    
+    #return (
+    #    pred.get("content")
+    #    or pred.get("generated_text")
+    #    or str(pred)  # fallback
+    #)
+    
+    return pred
 
 
 
