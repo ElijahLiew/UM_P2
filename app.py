@@ -6,6 +6,8 @@ from typing import Dict, Any, List
 from google.cloud import aiplatform
 from google.oauth2 import service_account
 import json
+import os
+
 
 
 # ── 1) Logging ──────────────────────────────────────────────────────────────
@@ -33,6 +35,10 @@ logger = logging.getLogger(__name__)
 PROJECT_ID     = "custom-history-460319-a4"
 LOCATION       = "us-central1"
 ENDPOINT_ID    = "2965916123251343360"
+
+
+st.write("Key path exists:", os.path.exists(st.secrets["sa_key_path"]))
+st.write("Absolute path:", os.path.abspath(st.secrets["sa_key_path"]))
 
 
 key_path = st.secrets["sa_key_path"]
