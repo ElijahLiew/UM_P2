@@ -42,6 +42,7 @@ ENDPOINT_ID    = "2965916123251343360"
 
 # 1) Sanity-check the env-var and file
 key_path = ".streamlit/service-account.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
 st.write("Using key file:", key_path)
 st.write("Exists on disk:", os.path.exists(key_path))
 if not os.path.exists(key_path):
@@ -68,7 +69,7 @@ logger.info(f"creds: {creds}")
 
 aiplatform.init(project=PROJECT_ID, 
                 location=LOCATION,
-                credentials=creds,
+                #credentials=creds,
                 )
 
 
