@@ -121,12 +121,12 @@ def call_vertex_llm(
     """
     if parameters is None:
         # Reasonable generic defaults – tweak for your model
-        parameters = {"temperature": 0.2, "maxOutputTokens": 512}
+        parameters = {"temperature": 0.2, "maxOutputTokens": 2048}
 
-    #instances: List[Dict[str, str]] = [{"content": prompt}]
-    instances: List[Dict[str, Any]] = [{
-        "messages": [{"author": "user", "content": prompt}]
-    }]
+    instances: List[Dict[str, str]] = [{"inputs": prompt}]
+    #instances: List[Dict[str, Any]] = [{
+    #    "messages": [{"author": "user", "content": prompt}]
+    #}]
     
     logger.info({"instances": instances, "parameters": parameters})
 
