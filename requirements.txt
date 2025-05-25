@@ -9,4 +9,3 @@ huggingface-hub
 logging
 google-cloud-aiplatform
 google-auth
-json
