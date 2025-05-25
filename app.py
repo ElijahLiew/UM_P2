@@ -37,6 +37,7 @@ LOCATION       = "us-central1"
 ENDPOINT_ID    = "2965916123251343360"
 
 
+st.write("Secrets loaded:", list(st.secrets.keys()))
 st.write("Key path exists:", os.path.exists(st.secrets["sa_key_path"]))
 st.write("Absolute path:", os.path.abspath(st.secrets["sa_key_path"]))
 
