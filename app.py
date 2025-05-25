@@ -47,20 +47,23 @@ print(f"ep: {ep._gca_endpoint.deployed_models[0].model}")
 
 
 # 1) Sanity-check the env-var and file
-key_path = ".streamlit/service-account.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
-st.write("Using key file:", key_path)
-st.write("Exists on disk:", os.path.exists(key_path))
-if not os.path.exists(key_path):
-    st.error("Service-account JSON not found! Check your env-var.")
-    st.stop()
+#key_path = ".streamlit/service-account.json"
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+#st.write("Using key file:", key_path)
+#st.write("Exists on disk:", os.path.exists(key_path))
+#if not os.path.exists(key_path):
+#    st.error("Service-account JSON not found! Check your env-var.")
+#    st.stop()
 
 
 
 # 2) Load the service-account JSON
-with open(key_path, "r") as f:
-    SERVICE_ACCOUNT_KEY = json.load(f)
+#with open(key_path, "r") as f:
+#    SERVICE_ACCOUNT_KEY = json.load(f)
 
+
+
+SERVICE_ACCOUNT_KEY = st.secrets["google"]
 logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
 
 
