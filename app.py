@@ -7,6 +7,7 @@ from google.cloud import aiplatform
 from google.oauth2 import service_account
 import json
 import os
+from google.api_core import exceptions as core_exceptions
 
 
 
