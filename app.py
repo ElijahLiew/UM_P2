@@ -37,15 +37,15 @@ LOCATION       = "us-central1"
 ENDPOINT_ID    = "2965916123251343360"
 
 
-st.write("Secrets loaded:", list(st.secrets.keys()))
-st.write("Key path exists:", os.path.exists(st.secrets["sa_key_path"]))
-st.write("Absolute path:", os.path.abspath(st.secrets["sa_key_path"]))
 
-
-key_path = st.secrets["sa_key_path"]
-with open(key_path, "r") as f:
+with open("./.streamlit/custom-history-460319-a4-614312505aaa.json") as f:
     info = json.load(f)
 SERVICE_ACCOUNT_KEY = info
+
+
+
+#aiplatform.init(project=PROJECT_ID, location=LOCATION)
+
 
 
 if not (PROJECT_ID and ENDPOINT_ID):
@@ -63,8 +63,9 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
             credentials=credentials,
         )
-    else:       # default credentials / workload identity
+    else:       # default credentials / workload identity    
         client = aiplatform.gapic.PredictionServiceClient(
+            credentials=creds,
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
         )
 
