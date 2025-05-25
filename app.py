@@ -88,7 +88,7 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
         
         client = aiplatform.gapic.PredictionServiceClient(
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
-            credentials=credentials,
+            credentials=creds,
         )
 
     endpoint_path = client.endpoint_path(
