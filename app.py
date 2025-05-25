@@ -35,7 +35,7 @@ LOCATION       = "us-central1"
 ENDPOINT_ID    = "2965916123251343360"
 
 
-key_path = st.secrets["gcp"]["sa_key_path"]
+key_path = st.secrets["sa_key_path"]
 with open(key_path, "r") as f:
     info = json.load(f)
 SERVICE_ACCOUNT_KEY = info
