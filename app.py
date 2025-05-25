@@ -5,6 +5,8 @@ from typing import Dict, Any, List
 
 from google.cloud import aiplatform
 from google.oauth2 import service_account
+import json
+
 
 # ── 1) Logging ──────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -21,10 +23,19 @@ logger = logging.getLogger(__name__)
 #   VERTEX_ENDPOINT  = "1234567890123456789"       # Endpoint numeric ID
 #   SA_KEY           = "*****"             # JSON key **or** leave blank to use workload identity
 
-PROJECT_ID     = st.secrets.get("GCP_PROJECT")
-LOCATION       = st.secrets.get("GCP_LOCATION", "us-central1")
-ENDPOINT_ID    = st.secrets.get("VERTEX_ENDPOINT")
-SERVICE_ACCOUNT_KEY = st.secrets.get("SA_KEY", None)  # optional
+
+
+#PROJECT_ID     = st.secrets.get("GCP_PROJECT")
+#LOCATION       = st.secrets.get("GCP_LOCATION", "us-central1")
+#ENDPOINT_ID    = st.secrets.get("VERTEX_ENDPOINT")
+#SERVICE_ACCOUNT_KEY = st.secrets.get("SA_KEY", None)  # optional
+
+PROJECT_ID     = "custom-history-460319-a4"
+LOCATION       = "us-central1"
+ENDPOINT_ID    = "2965916123251343360"
+SERVICE_ACCOUNT_KEY = json.loads(st.secrets["gcp"]["sa_key"])
+
+
 
 if not (PROJECT_ID and ENDPOINT_ID):
     st.sidebar.error(
