@@ -58,7 +58,10 @@ logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
 
 
 
-creds = service_account.Credentials.from_service_account_info(SERVICE_ACCOUNT_KEY)
+creds = service_account.Credentials.from_service_account_info(
+                                                              SERVICE_ACCOUNT_KEY,
+                                                              scopes=["https://www.googleapis.com/auth/cloud-platform"],
+                                                              )
 logger.info(f"creds: {creds}")
 
 
