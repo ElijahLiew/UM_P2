@@ -42,6 +42,7 @@ with open("./.streamlit/custom-history-460319-a4-614312505aaa.json") as f:
     info = json.load(f)
 SERVICE_ACCOUNT_KEY = info
 
+logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
 
 
 #aiplatform.init(project=PROJECT_ID, location=LOCATION)
@@ -58,15 +59,12 @@ if not (PROJECT_ID and ENDPOINT_ID):
 @st.cache_resource(show_spinner=False)
 def get_vertex_client(project: str, location: str, sa_key: str | None):
     if sa_key:  # explicit service-account JSON
+        logger.info("if sa_key:")
+    
         credentials = service_account.Credentials.from_service_account_info(sa_key)
         client = aiplatform.gapic.PredictionServiceClient(
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
             credentials=credentials,
-        )
-    else:       # default credentials / workload identity    
-        client = aiplatform.gapic.PredictionServiceClient(
-            credentials=creds,
-            client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
         )
 
     endpoint_path = client.endpoint_path(
