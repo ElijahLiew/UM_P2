@@ -17,6 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+
 # ── 2) Secrets & config (static across reruns) ──────────────────────────────
 # In your Streamlit Cloud repo settings, add under **Secrets**:
 #   [secrets]
@@ -38,15 +40,33 @@ ENDPOINT_ID    = "2965916123251343360"
 
 
 
-with open("./.streamlit/custom-history-460319-a4-614312505aaa.json") as f:
-    info = json.load(f)
-SERVICE_ACCOUNT_KEY = info
+# 1) Sanity-check the env-var and file
+key_path = ".streamlit/service-account.json"
+st.write("Using key file:", key_path)
+st.write("Exists on disk:", os.path.exists(key_path))
+if not os.path.exists(key_path):
+    st.error("Service-account JSON not found! Check your env-var.")
+    st.stop()
+
+
+
+# 2) Load the service-account JSON
+with open(key_path, "r") as f:
+    SERVICE_ACCOUNT_KEY = json.load(f)
 
 logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
 
 
 
-aiplatform.init(project=PROJECT_ID, location=LOCATION)
+creds = service_account.Credentials.from_service_account_info(SERVICE_ACCOUNT_KEY)
+logger.info(f"creds: {creds}")
+
+
+
+aiplatform.init(project=PROJECT_ID, 
+                location=LOCATION,
+                credentials=creds,
+                )
 
 
 
@@ -55,6 +75,8 @@ if not (PROJECT_ID and ENDPOINT_ID):
         "🚨 Please add GCP_PROJECT and VERTEX_ENDPOINT to Streamlit secrets."
     )
     st.stop()
+
+
 
 # ── 3) Make a singleton Vertex client (cached) ──────────────────────────────
 @st.cache_resource(show_spinner=False)
@@ -66,7 +88,7 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
         
         client = aiplatform.gapic.PredictionServiceClient(
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
-            #credentials=credentials,
+            credentials=credentials,
         )
 
     endpoint_path = client.endpoint_path(
@@ -75,7 +97,11 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
     logger.info(f"✅ Vertex client ready - endpoint path: {endpoint_path}")
     return client, endpoint_path
 
+
+
 client, endpoint_path = get_vertex_client(PROJECT_ID, LOCATION, SERVICE_ACCOUNT_KEY)
+
+
 
 # ── 4) Helper to call your LLM endpoint ─────────────────────────────────────
 def call_vertex_llm(
@@ -106,6 +132,8 @@ def call_vertex_llm(
         or pred.get("generated_text")
         or str(pred)  # fallback
     )
+
+
 
 # ── 5) UI ───────────────────────────────────────────────────────────────────
 st.title("📄→🤖  Vertex AI QA Demo")
