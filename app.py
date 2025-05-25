@@ -40,6 +40,12 @@ ENDPOINT_ID    = "2965916123251343360"
 
 
 
+from google.cloud import aiplatform
+ep = aiplatform.Endpoint("2965916123251343360")
+print(f"ep: {ep._gca_endpoint.deployed_models[0].model}")
+
+
+
 # 1) Sanity-check the env-var and file
 key_path = ".streamlit/service-account.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
@@ -121,7 +127,11 @@ def call_vertex_llm(
         # Reasonable generic defaults – tweak for your model
         parameters = {"temperature": 0.2, "maxOutputTokens": 512}
 
-    instances: List[Dict[str, str]] = [{"content": prompt}]
+    #instances: List[Dict[str, str]] = [{"content": prompt}]
+    instances: List[Dict[str, Any]] = [{
+        "messages": [{"author": "user", "content": prompt}]
+    }]
+    
     logger.info({"instances": instances, "parameters": parameters})
 
     response = client.predict(
