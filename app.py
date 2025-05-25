@@ -33,8 +33,12 @@ logger = logging.getLogger(__name__)
 PROJECT_ID     = "custom-history-460319-a4"
 LOCATION       = "us-central1"
 ENDPOINT_ID    = "2965916123251343360"
-SERVICE_ACCOUNT_KEY = json.loads(st.secrets["gcp"]["sa_key"])
 
+
+key_path = st.secrets["gcp"]["sa_key_path"]
+with open(key_path, "r") as f:
+    info = json.load(f)
+SERVICE_ACCOUNT_KEY = info
 
 
 if not (PROJECT_ID and ENDPOINT_ID):
