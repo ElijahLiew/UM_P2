@@ -130,11 +130,37 @@ def call_vertex_llm(
     
     logger.info({"instances": instances, "parameters": parameters})
 
-    response = client.predict(
-        endpoint=endpoint_path,
-        instances=instances,
-        parameters=parameters,
-    )
+    #response = client.predict(
+    #    endpoint=endpoint_path,
+    #    instances=instances,
+    #    parameters=parameters,
+    #)
+    
+    
+    
+    try:
+        response = client.predict(
+            endpoint=endpoint_path,
+            instances=instances,
+            parameters=parameters,
+        )
+    except core_exceptions.InternalServerError as e:
+        # Look for the "Incomplete generation" marker
+        msg = str(e)
+        if "Incomplete generation" in msg:
+            logger.warning("Incomplete generation – retrying with larger token budget")
+            
+            response = client.predict(
+                endpoint=endpoint_path,
+                instances=instances,
+                parameters=parameters,
+            )
+        else:
+            # re-raise any other internal error
+            raise
+    
+    
+    
     # Each prediction is usually a dict with a 'content' or 'generated_text' key
     pred = response.predictions[0]
     return (
