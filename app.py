@@ -63,19 +63,6 @@ ENDPOINT_ID    = "2965916123251343360"
 
 
 
-SERVICE_ACCOUNT_KEY = st.secrets["google"]
-logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
-
-
-
-creds = service_account.Credentials.from_service_account_info(
-                                                              SERVICE_ACCOUNT_KEY,
-                                                              scopes=["https://www.googleapis.com/auth/cloud-platform"],
-                                                              )
-logger.info(f"creds: {creds}")
-
-
-
 aiplatform.init(project=PROJECT_ID, 
                 location=LOCATION,
                 #credentials=creds,
@@ -93,16 +80,22 @@ if not (PROJECT_ID and ENDPOINT_ID):
 
 # ── 3) Make a singleton Vertex client (cached) ──────────────────────────────
 @st.cache_resource(show_spinner=False)
-def get_vertex_client(project: str, location: str, sa_key: str | None):
-    if sa_key:  # explicit service-account JSON
-        logger.info("if sa_key:")
+def get_vertex_client(project: str, location: str):    
+    SERVICE_ACCOUNT_KEY = st.secrets["google"]
+    logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
+
+    creds = service_account.Credentials.from_service_account_info(
+                                                          SERVICE_ACCOUNT_KEY,
+                                                          scopes=["https://www.googleapis.com/auth/cloud-platform"],
+                                                          )
+    logger.info(f"creds: {creds}")
+
+    #credentials = service_account.Credentials.from_service_account_info(sa_key)
     
-        #credentials = service_account.Credentials.from_service_account_info(sa_key)
-        
-        client = aiplatform.gapic.PredictionServiceClient(
-            client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
-            credentials=creds,
-        )
+    client = aiplatform.gapic.PredictionServiceClient(
+        client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
+        credentials=creds,
+    )
 
     endpoint_path = client.endpoint_path(
         project=project, location=location, endpoint=ENDPOINT_ID
@@ -112,7 +105,7 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
 
 
 
-client, endpoint_path = get_vertex_client(PROJECT_ID, LOCATION, SERVICE_ACCOUNT_KEY)
+client, endpoint_path = get_vertex_client(PROJECT_ID, LOCATION)
 
 
 
