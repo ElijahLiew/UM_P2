@@ -121,7 +121,7 @@ def call_vertex_llm(
         # Reasonable generic defaults – tweak for your model
         parameters = {"temperature": 0.2, "maxOutputTokens": 512}
 
-    instances: List[Dict[str, str]] = [{"prompt": prompt}]
+    instances: List[Dict[str, str]] = [{"content": prompt}]
     logger.info({"instances": instances, "parameters": parameters})
 
     response = client.predict(
