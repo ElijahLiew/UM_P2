@@ -40,9 +40,9 @@ ENDPOINT_ID    = "2965916123251343360"
 
 
 
-from google.cloud import aiplatform
-ep = aiplatform.Endpoint("2965916123251343360")
-print(f"ep: {ep._gca_endpoint.deployed_models[0].model}")
+#from google.cloud import aiplatform
+#ep = aiplatform.Endpoint("2965916123251343360")
+#print(f"ep: {ep._gca_endpoint.deployed_models[0].model}")
 
 
 
