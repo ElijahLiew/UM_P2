@@ -45,7 +45,8 @@ SERVICE_ACCOUNT_KEY = info
 logger.info(f"SERVICE_ACCOUNT_KEY: {SERVICE_ACCOUNT_KEY}")
 
 
-#aiplatform.init(project=PROJECT_ID, location=LOCATION)
+
+aiplatform.init(project=PROJECT_ID, location=LOCATION)
 
 
 
@@ -61,10 +62,11 @@ def get_vertex_client(project: str, location: str, sa_key: str | None):
     if sa_key:  # explicit service-account JSON
         logger.info("if sa_key:")
     
-        credentials = service_account.Credentials.from_service_account_info(sa_key)
+        #credentials = service_account.Credentials.from_service_account_info(sa_key)
+        
         client = aiplatform.gapic.PredictionServiceClient(
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"},
-            credentials=credentials,
+            #credentials=credentials,
         )
 
     endpoint_path = client.endpoint_path(
